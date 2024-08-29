@@ -13,13 +13,13 @@
     <div class="flex flex-col items-center">
       <h3 class="mb-3 text-white text-2xl font-bold pt-16"> HD4K WEATHER </h3>
       <h5 class="py-8 text-balance text-white">Enter a city to get the weather</h5>
-      <div class="">
+      <div>
         <input
           class="outline-none px-2 py-2 bg-white mb-6"
           @keyup.enter="fetchingdata"
           v-model="location"
           type="text"
-          placeholder="Put your number"
+          placeholder="Enter a city"
         />
         {{ linknum }}
       </div>
@@ -29,75 +29,99 @@
         <div class="text-2xl text-white text-center mb-2">{{ datas.weather[0].main }}</div>
         <div class="text-2xl text-white text-center mb-2">{{ datas.weather[0].description }}</div>
         <div class="flex justify-center">
-          <div @dblclick="temp = true" class="text-2xl text-white p-4 cursor-pointer" v-if="temp == false">
-            {{ Math.round(datas.main.temp - 272.15) }}°C
+          <div v-if="!temp" @dblclick="toggleTemp" class="text-2xl text-white p-4 cursor-pointer">
+            {{ Math.round(datas.main.temp - 273.15) }}°C
           </div>
-          <div class="text-2xl text-white p-4 cursor-pointer" @dblclick="temp = false" v-else>{{ Math.round(datas.main.temp) }}°F</div>
+          <div v-else @dblclick="toggleTemp" class="text-2xl text-white p-4 cursor-pointer">
+            {{ Math.round((datas.main.temp - 273.15) * 9/5 + 32) }}°F
+          </div>
         </div>
       </div>
-      <div v-else>No data</div>
+      <div v-else>
+        <div v-if="loading" class="spinner"></div>
+      </div>
     </div>
   </div>
+  <div class="fixed bottom-10 right-10">
+    <div v-if="showFAB" class="transition duration-150 ease-in-out">
+      <div class="cursor-pointer  text-white bg-gray-700 px-3 py-1 rounded-full mb-2" @click="toggleTemp">°F</div>
+      <div  class="cursor-pointer  text-white bg-gray-700 px-3 py-1 rounded-full mb-2" @click="toggleTemp">°C</div>
+      <div  class="cursor-pointer  text-white bg-gray-700 px-3 py-1 rounded-full mb-2 mx-auto" @click="lung = ar">ar</div>
+      <div  class="cursor-pointer  text-white bg-gray-700 px-3 py-1 rounded-full mb-2 mx-auto" @click="lung = en">en</div>
+    </div>
+    <div @click="showFAB = !showFAB" class="text-2xl text-white bg-gray-300 px-4 py-2 rounded-full cursor-pointer">
+      {{ icon }}
+    </div>
+  </div>
+  <RouterView />
 </template>
-
-<!-- <style scoped>
-.animated-bg {
-  animation: loopBackground 5s linear infinite; 
-}
-
-@keyframes loopBackground {
-  0% {
-    background-position: 0% ;
-  }
-  50% {
-    background-position: 100% ; 
-  }
-  100% {
-    background-position: 0%;
-  }
-  50% {
-    background-position: 100% ;
-  }
-  0% {
-    background-position: 0%;
-  }
-}
-</style> -->
 
 <script>
 import axios from "axios";
+
 export default {
   data() {
     return {
+      icon:'+',
+      lung:'ar',
       api_key: "c4541237dca615dffc4205a40a9373c2",
       datas: null,
+      showFAB: false, 
       linknum: "",
-      temp: null,
-      location: "tripoli",
+      temp: false,   
+      location: "",
       id: "",
+      loading: false,  
     };
   },
   methods: {
     fetchingdata() {
+      this.loading = true; 
       axios
         .get(
-          `https://api.openweathermap.org/data/2.5/weather?q=${this.location}&lang=ar&appid=${this.api_key}`
+          `https://api.openweathermap.org/data/2.5/weather?q=${this.location}&lang=${this.lung}&appid=${this.api_key}`
         )
         .then((response) => {
           this.datas = response.data;
+          this.loading = false;  
           console.log(this.datas);
         })
-        .catch(function (error) {
+        .catch((error) => {
+          this.loading = false; 
           console.log(error);
         });
     },
-    template() {
+    toggleTemp() {
       this.temp = !this.temp;
+      
     },
-  },
-  mounted() {
-    console.log(this.datas);
-    this.fetchingdata();
+    changeicon(){
+      if(this.showFAB === true){
+        this.icon = '*'
+      }else{
+        this.icon = '+'
+      }
+    }
   },
 };
 </script>
+
+<style scoped>
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #ccc; 
+    border-top: 5px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+</style>
